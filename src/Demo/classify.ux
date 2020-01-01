@@ -1,0 +1,258 @@
+<template>
+  <!-- template里只能有一个根节点 -->
+  <div>
+  <div class='classify_page'>
+    
+      <list class='list_kind' scrollpage='{{scrollPage}}'>
+        <list-item  for='optionList' onclick='option($idx)'>  
+          <div class="item_kind_setting" if='{{0==$idx}}'>
+            <image src='/Common/setting.png' class='setting'> </image>
+          </div>
+          <div class="item_kind_check" elif='{{option_index==$idx}}'>
+            <text class='item_kind_text_check'>{{$item}}</text>
+          </div>
+          <div class="item_kind" else>
+            <text class='item_kind_text'>{{$item}}</text>
+          </div>
+        </list-item>
+      </list>
+      
+      <div class='save_block' if='{{option_index>1}}'>
+        <div class="save_btn" onclick='saveClassChange'>
+          <text class='save_btn_text'>保存</text>
+        </div>
+      </div>
+
+      <div class='save_block' if='{{option_index==0}}'>
+        <div class="save_btn" onclick='deleteFinish'>
+          <text class='save_btn_text'>完成</text>
+        </div>
+      </div>
+      <list class='showphoto' scrollpage='{{scrollPage}}'>
+
+        <list-item for='list'>
+          <stack>
+            <div class="show">
+              <image class='image' src='{{$item.url}}'></image>
+              <text class='text'>{{$item.class_name}}</text>
+            </div>
+            <div class='div_option'>
+              <image src='/Common/close.png' class='option' if='{{option_index==0}}' onclick='deletePic($idx)'> </image>
+              <image class='option' elif='{{option_index==1}}'> </image>
+              <image src='/Common/check_yes.png' class='option' elif='{{option_index==$item.class_id}}' onclick='deletePic($idx)'> </image>
+              <image src='/Common/check_no.png' class='option' elif='{{option_index!=$item.class_id}}' onclick='changeClass($idx)'> </image>
+            </div>
+          </stack>
+        </list-item>
+      </list>
+  </div>
+  </div>
+</template>
+
+<script>
+import fetch from '@system.fetch'
+import prompt from '@system.prompt'
+export default {
+  data: {
+    delete: false,
+    classify: false,
+    option_index: 1,
+    list:[],
+    cache:[],
+    optionList: ['删除','全部','长裤','外套','卫衣','羽绒服','短裤','T-恤','短袖','裙子'],
+    scrollpage: false
+  }, 
+  async option(index){
+    this.option_index=index
+  },
+  async deletePic(index){
+    try {
+      const response = await fetch.fetch({
+        url: 'http://134.175.250.33/cloth/delete',
+        method: 'POST',
+        data:{
+          id: this.list[index]._id,
+        }
+      })
+      var flag = JSON.parse(response.data.data)
+      if('ok'==flag.status){
+        this.list.splice(index,1) 
+      }
+      else{
+        prompt.showToast({
+          message: ('删除失败')
+        })
+      }
+    } catch(err) {
+      prompt.showToast({
+        message: (err.data)
+      })
+    }
+  },
+  changeClass(index){
+    this.list[index].class_id=this.option_index    
+  },
+  async saveClassChange(){
+    this.option_index=1
+    for (var i=0;i<this.list.length;i++){ 
+      if(this.list[i].class_name!=this.optionList[this.list[i].class_id]){
+        try {
+          const response = await fetch.fetch({
+            url: 'http://134.175.250.33/cloth/update',
+            method: 'POST',
+            data:{
+              id: this.list[i]._id,
+              class_name: this.list[i].class_id
+            }
+          })
+          var flag = JSON.parse(response.data.data)
+          if('ok'==flag.status){
+            this.list[i].class_name=this.optionList[this.list[i].class_id]
+          }
+          else{
+            prompt.showToast({
+              message: ('修改失败')
+            })
+          }
+        } catch(err) {
+          prompt.showToast({
+            message: (err.data)
+          })
+        }
+      }
+    } 
+  },
+  deleteFinish(){
+    this.option_index=1
+  }
+}
+</script>
+
+<style>
+  .classify_page {
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .list_kind{
+    height : 12%;
+    width: 100%;
+    columns: 5;
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-right: 10px;     
+  }
+  
+  .item_kind_check{
+    width: 100%;
+    margin: 10px;   
+    align-content: center;
+    justify-content: center;
+    background-color: #70cdcd
+  }
+
+  .item_kind_setting{
+    width: 100%;
+    margin: 10px;   
+    align-content: center;
+    justify-content: center;
+  }
+
+  .item_kind{
+    width: 100%;
+    margin: 10px;
+    border-width: 2px;
+    border-color:#d3d3d3;   
+    align-content: center;
+    justify-content: center;
+  }
+  
+  .item_kind_text_check{
+    margin: 5px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #fff;
+  }
+
+  .item_kind_text{
+    margin: 5px;
+    font-size: 30px;
+    font-weight: bold;
+    color:#1d1d1d;
+  }
+
+  .save_block{
+    height: 6%;
+    width: 100%;
+    justify-content:flex-end;
+    align-content: flex-end;
+  }
+
+  .save_btn{
+    height: 80%;
+    width: 15%;
+    margin: 10px;
+    background-color:#70cdcd;
+    justify-content: center;
+  }
+
+  .save_btn_text{
+    margin: 5px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #fff;
+  }
+  .space{
+    height: 100%;
+    width: 10%;
+  }
+  .icon{
+    width: 80px;
+    height: 80px;
+  }
+  .text{
+    font-size: 30px;
+    font-weight: bold;
+  }
+  .showphoto{
+    width: 100%;
+    height: 82%;
+    columns: 3;
+    margin-top: 10px;
+  }
+
+  .show{
+    width: 100%;
+    margin: 15px;
+    padding: 15px;
+    flex-direction: column;
+    border-style: dashed;
+    border-width: 2px;
+    border-color:#d3d3d3;
+    border-radius: 15px;
+  }
+
+  .image{
+    height: 200px;
+    width: 100%;
+  }
+  .text{
+    margin-top: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 30px;
+    font-weight: bold;
+  }
+
+  .div_option{
+    height: 100%;
+    width: 100%;
+  }
+  .option{
+    height: 35px;
+    width: 35px;
+    margin-top: 25px;
+    margin-left: 25px;
+  }
+</style>
